@@ -1,0 +1,258 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Housie Caller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  /* Layout: centered celebration — eyebrow + serif title, dot garland, gold-ringed number medallion as hero, pastel chip grid below. Single committed pastel-light theme. */
+  :root{
+    --cream:#FCF8F3; --cream-deep:#F5ECE0; --surface:#FFFDFB;
+    --ink:#4B4038; --muted:#9C9084; --line:#EADFCF;
+    --blush:#F3C4CF; --sky:#C4DCEC;
+    --plum:#6E3650; --plum-2:#9A5470; --plum-ink:#FBEFDD;
+    --gold:#C9A86A; --gold-light:#EAD6A6; --gold-deep:#A6854A; --gold-ink:#3E3015;
+    --shadow:0 18px 40px -22px rgba(110,54,80,.45);
+    color-scheme:light;
+  }
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    background:
+      radial-gradient(60vw 48vw at 8% -6%, rgba(243,196,207,.55), transparent 60%),
+      radial-gradient(58vw 46vw at 100% 2%, rgba(196,220,236,.55), transparent 62%),
+      linear-gradient(180deg,var(--cream),var(--cream-deep));
+    background-attachment:fixed;
+    font-family:"Nunito",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding-left:max(18px,env(safe-area-inset-left,0px));
+    padding-right:max(18px,env(safe-area-inset-right,0px));
+    padding-block:22px 30px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; align-items:center; gap:18px; flex:1}
+
+  header{text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px}
+  .eyebrow{
+    margin:0; font-size:.72rem; font-weight:800; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--gold-deep);
+  }
+  h1{
+    margin:0; font-family:"Fraunces",Georgia,serif; font-weight:600;
+    font-size:clamp(2.1rem,10vw,2.8rem); line-height:1; color:var(--plum);
+    letter-spacing:.3px; text-wrap:balance;
+  }
+  .garland{display:flex; gap:9px; align-items:center; margin-top:8px}
+  .garland i{width:9px; height:9px; border-radius:50%; display:block; box-shadow:0 2px 5px -2px rgba(110,54,80,.5)}
+  .garland i:nth-child(3n+1){background:var(--blush)}
+  .garland i:nth-child(3n+2){background:var(--gold)}
+  .garland i:nth-child(3n){background:var(--sky)}
+
+  .count{
+    font-weight:800; font-size:.9rem; color:var(--gold-deep);
+    background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:7px 16px; font-variant-numeric:tabular-nums; box-shadow:0 6px 16px -12px rgba(110,54,80,.5);
+  }
+
+  .stage{display:flex; flex-direction:column; align-items:center; gap:14px; width:100%}
+  .medallion{
+    position:relative; width:min(66vw,290px); aspect-ratio:1; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    background:
+      radial-gradient(circle at 50% 36%, #ffffff, #fdf4f6 58%, #f7e9ef 100%);
+    box-shadow:var(--shadow), inset 0 0 0 2px rgba(255,255,255,.7);
+    isolation:isolate;
+  }
+  /* gold ring */
+  .medallion::before{
+    content:""; position:absolute; inset:-9px; border-radius:50%; z-index:-1;
+    background:conic-gradient(from 210deg, var(--gold-deep), var(--gold-light), var(--gold), var(--gold-light), var(--gold-deep));
+    box-shadow:0 14px 30px -16px rgba(166,133,74,.8);
+  }
+  .pulse{
+    position:absolute; inset:6px; border-radius:50%; border:2px solid var(--gold); opacity:0; pointer-events:none;
+  }
+  .pulse.go{animation:pulse .75s ease-out}
+  @keyframes pulse{0%{transform:scale(.82);opacity:.75}100%{transform:scale(1.22);opacity:0}}
+
+  .big{
+    font-family:"Fraunces",Georgia,serif; font-weight:700; color:var(--plum);
+    font-size:clamp(4.6rem,30vw,8rem); line-height:1; letter-spacing:-2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .big.placeholder{
+    font-family:"Nunito",sans-serif; font-weight:700; font-size:clamp(1rem,5.2vw,1.25rem);
+    color:var(--muted); letter-spacing:0; padding:0 18px; line-height:1.4;
+  }
+  .big.pop{animation:pop .5s cubic-bezier(.2,.8,.3,1.25)}
+  @keyframes pop{0%{transform:scale(.55);opacity:0}60%{transform:scale(1.09)}100%{transform:scale(1);opacity:1}}
+  .prev{color:var(--muted); font-size:.9rem; min-height:1.2em; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.3px}
+
+  .draw{
+    appearance:none; border:none; cursor:pointer; width:100%;
+    background:linear-gradient(135deg,var(--plum-2),var(--plum));
+    color:var(--plum-ink); font-family:"Nunito",sans-serif;
+    font-size:1.35rem; font-weight:800; letter-spacing:.4px;
+    padding:20px; border-radius:999px;
+    box-shadow:0 16px 30px -14px rgba(110,54,80,.75), inset 0 1px 0 rgba(255,255,255,.25);
+    transition:transform .06s ease, box-shadow .2s, opacity .2s;
+  }
+  .draw:active{transform:translateY(1px) scale(.99)}
+  .draw:disabled{opacity:.5; cursor:default; box-shadow:none}
+  .draw:focus-visible{outline:3px solid var(--gold-deep); outline-offset:3px}
+
+  .row{display:flex; gap:10px; width:100%}
+  .ghost{
+    appearance:none; cursor:pointer; flex:1;
+    background:var(--surface); color:var(--plum); border:1px solid var(--line);
+    font-family:"Nunito",sans-serif; font-size:.95rem; font-weight:700; padding:13px; border-radius:999px;
+    transition:background .15s, border-color .15s;
+  }
+  .ghost:active{background:var(--cream-deep)}
+  .ghost:disabled{opacity:.45; cursor:default}
+  .ghost:focus-visible{outline:2px solid var(--gold-deep); outline-offset:2px}
+
+  .sheet{width:100%; border:1px solid var(--line); border-radius:22px; overflow:hidden; background:var(--surface); box-shadow:0 14px 34px -24px rgba(110,54,80,.5)}
+  .sheet summary{
+    list-style:none; cursor:pointer; padding:16px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-weight:800; font-size:.98rem; color:var(--plum);
+  }
+  .sheet summary::-webkit-details-marker{display:none}
+  .chev{color:var(--gold-deep); transition:transform .2s; font-size:.8rem}
+  .sheet[open] .chev{transform:rotate(180deg)}
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
+    gap:7px; padding:4px 18px 20px;
+  }
+  .cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:11px; font-weight:800; font-size:.92rem; font-variant-numeric:tabular-nums;
+    background:var(--cream-deep); color:var(--muted); border:1px solid transparent; transition:transform .15s;
+  }
+  .cell.hit{
+    background:linear-gradient(135deg,var(--plum-2),var(--plum)); color:var(--plum-ink);
+    box-shadow:0 6px 12px -8px rgba(110,54,80,.7);
+  }
+  .cell.latest{border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-light), 0 6px 12px -8px rgba(166,133,74,.6)}
+
+  @media (prefers-reduced-motion:reduce){
+    .big.pop,.pulse.go{animation:none}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Birthday Celebration</p>
+    <h1>Baby Bingo</h1>
+    <div class="garland" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </header>
+
+  <span class="count" id="count">0 of 75 called</span>
+
+  <div class="stage">
+    <div class="medallion">
+      <span class="pulse" id="pulse"></span>
+      <div class="big placeholder" id="number">Tap below to call your first number</div>
+    </div>
+    <div class="prev" id="prev"></div>
+  </div>
+
+  <button class="draw" id="draw">Call a number</button>
+
+  <div class="row">
+    <button class="ghost" id="undo">Undo last</button>
+    <button class="ghost" id="reset">New game</button>
+  </div>
+
+  <details class="sheet" id="sheet">
+    <summary><span id="sheetLabel">Numbers called (0)</span><span class="chev">▾</span></summary>
+    <div class="grid" id="grid"></div>
+  </details>
+</div>
+
+<script>
+  var MAX = 75, KEY = "housie.drawn.v1";
+  var drawn = [];
+  try{ var s = localStorage.getItem(KEY); if(s) drawn = JSON.parse(s) || []; }catch(e){}
+
+  var elNum = document.getElementById("number"),
+      elPrev = document.getElementById("prev"),
+      elCount = document.getElementById("count"),
+      elDraw = document.getElementById("draw"),
+      elUndo = document.getElementById("undo"),
+      elReset = document.getElementById("reset"),
+      elGrid = document.getElementById("grid"),
+      elPulse = document.getElementById("pulse"),
+      elLabel = document.getElementById("sheetLabel");
+
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(drawn)); }catch(e){} }
+
+  function render(){
+    var n = drawn.length;
+    elCount.textContent = n + " of " + MAX + " called";
+    elLabel.textContent = "Numbers called (" + n + ")";
+
+    if(n === 0){
+      elNum.textContent = "Tap below to call your first number";
+      elNum.className = "big placeholder";
+      elPrev.textContent = "";
+    } else {
+      elNum.textContent = drawn[n-1];
+      elNum.className = "big";
+      var earlier = drawn.slice(0, n-1).slice(-6);
+      elPrev.textContent = earlier.length ? "Earlier:  " + earlier.join("  ·  ") : "";
+    }
+
+    elDraw.disabled = n >= MAX;
+    elDraw.textContent = n >= MAX ? "All 75 called — bingo!" : "Call a number";
+    elUndo.disabled = n === 0;
+
+    var latest = drawn[n-1];
+    var html = "";
+    for(var i=1;i<=MAX;i++){
+      var hit = drawn.indexOf(i) !== -1;
+      var cls = "cell" + (hit ? " hit" : "") + (i === latest ? " latest" : "");
+      html += '<div class="'+cls+'">'+i+'</div>';
+    }
+    elGrid.innerHTML = html;
+  }
+
+  function celebrate(){
+    elNum.classList.remove("pop"); elPulse.classList.remove("go");
+    // force reflow so the animation restarts each call
+    void elNum.offsetWidth;
+    elNum.classList.add("pop"); elPulse.classList.add("go");
+  }
+
+  elDraw.addEventListener("click", function(){
+    if(drawn.length >= MAX) return;
+    var pool = [];
+    for(var i=1;i<=MAX;i++) if(drawn.indexOf(i) === -1) pool.push(i);
+    var pick = pool[Math.floor(Math.random()*pool.length)];
+    drawn.push(pick);
+    save(); render(); celebrate();
+  });
+
+  elUndo.addEventListener("click", function(){
+    if(!drawn.length) return;
+    drawn.pop(); save(); render();
+  });
+
+  var resetArmed = false, resetTimer = null;
+  elReset.addEventListener("click", function(){
+    if(!drawn.length){ return; }
+    if(!resetArmed){
+      resetArmed = true;
+      elReset.textContent = "Tap again to clear";
+      resetTimer = setTimeout(function(){
+        resetArmed = false; elReset.textContent = "New game";
+      }, 2500);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false;
+    elReset.textContent = "New game";
+    drawn = []; save(); render();
+  });
+
+  render();
+</script>
