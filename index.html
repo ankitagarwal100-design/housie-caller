@@ -1,0 +1,191 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Housie Caller</title>
+<style>
+  /* Layout: single centered column — giant number, one draw button, a collapsible drawn-grid below */
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --fg:#161922; --muted:#5a6273;
+    --accent:#d64527; --accent-ink:#ffffff; --line:#e3e6ec; --drawn:#eef0f4;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --bg:#111318; --surface:#1b1e26; --fg:#f0f2f6; --muted:#9aa2b2;
+    --accent:#ff6a47; --accent-ink:#1b1007; --line:#2b2f3a; --drawn:#262a34;
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#111318; --surface:#1b1e26; --fg:#f0f2f6; --muted:#9aa2b2;
+    --accent:#ff6a47; --accent-ink:#1b1007; --line:#2b2f3a; --drawn:#262a34;
+    color-scheme:dark;
+  }
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:18px 28px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%; max-width:440px; display:flex; flex-direction:column; gap:18px; flex:1}
+  header{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+  h1{font-size:1.15rem; font-weight:700; margin:0; letter-spacing:.2px}
+  .count{font-variant-numeric:tabular-nums; color:var(--muted); font-size:.95rem; font-weight:600}
+
+  .stage{
+    background:var(--surface); border:1px solid var(--line); border-radius:22px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; padding:28px 16px; min-height:40vh;
+  }
+  .big{
+    font-size:clamp(5rem,34vw,9rem); font-weight:800; line-height:1;
+    font-variant-numeric:tabular-nums; letter-spacing:-2px;
+  }
+  .big.placeholder{font-size:clamp(1.2rem,6vw,1.6rem); font-weight:600; color:var(--muted); letter-spacing:0; text-align:center}
+  .prev{color:var(--muted); font-size:.9rem; min-height:1.2em; font-variant-numeric:tabular-nums}
+
+  .draw{
+    appearance:none; border:none; cursor:pointer; width:100%;
+    background:var(--accent); color:var(--accent-ink);
+    font-size:1.5rem; font-weight:800; letter-spacing:.3px;
+    padding:22px; border-radius:18px; transition:transform .05s ease, opacity .2s;
+  }
+  .draw:active{transform:scale(.98)}
+  .draw:disabled{opacity:.45; cursor:default}
+  .draw:focus-visible{outline:3px solid var(--fg); outline-offset:3px}
+
+  .row{display:flex; gap:10px}
+  .ghost{
+    appearance:none; cursor:pointer; flex:1;
+    background:transparent; color:var(--muted); border:1px solid var(--line);
+    font-size:.95rem; font-weight:600; padding:13px; border-radius:14px;
+  }
+  .ghost:active{background:var(--drawn)}
+  .ghost:focus-visible{outline:2px solid var(--fg); outline-offset:2px}
+
+  .sheet{border:1px solid var(--line); border-radius:18px; overflow:hidden; background:var(--surface)}
+  .sheet summary{
+    list-style:none; cursor:pointer; padding:15px 18px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-weight:600; font-size:.98rem;
+  }
+  .sheet summary::-webkit-details-marker{display:none}
+  .chev{color:var(--muted); transition:transform .2s}
+  .sheet[open] .chev{transform:rotate(180deg)}
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(42px,1fr));
+    gap:7px; padding:4px 16px 18px;
+  }
+  .cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:10px; font-weight:700; font-size:.95rem; font-variant-numeric:tabular-nums;
+    background:var(--drawn); color:var(--muted); opacity:.45;
+  }
+  .cell.hit{background:var(--accent); color:var(--accent-ink); opacity:1}
+  .cell.latest{outline:3px solid var(--fg); outline-offset:1px}
+  .empty{padding:0 18px 18px; color:var(--muted); font-size:.9rem}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Housie Caller</h1>
+    <span class="count" id="count">0 / 75</span>
+  </header>
+
+  <div class="stage">
+    <div class="big placeholder" id="number">Tap draw for your first number</div>
+    <div class="prev" id="prev"></div>
+  </div>
+
+  <button class="draw" id="draw">Draw a number</button>
+
+  <div class="row">
+    <button class="ghost" id="undo">Undo last</button>
+    <button class="ghost" id="reset">New game</button>
+  </div>
+
+  <details class="sheet" id="sheet">
+    <summary><span id="sheetLabel">Numbers drawn (0)</span><span class="chev">▾</span></summary>
+    <div class="grid" id="grid"></div>
+  </details>
+</div>
+
+<script>
+  var MAX = 75, KEY = "housie.drawn.v1";
+  var drawn = [];
+  try{ var s = localStorage.getItem(KEY); if(s) drawn = JSON.parse(s) || []; }catch(e){}
+
+  var elNum = document.getElementById("number"),
+      elPrev = document.getElementById("prev"),
+      elCount = document.getElementById("count"),
+      elDraw = document.getElementById("draw"),
+      elUndo = document.getElementById("undo"),
+      elReset = document.getElementById("reset"),
+      elGrid = document.getElementById("grid"),
+      elLabel = document.getElementById("sheetLabel");
+
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(drawn)); }catch(e){} }
+
+  function render(){
+    var n = drawn.length;
+    elCount.textContent = n + " / " + MAX;
+    elLabel.textContent = "Numbers drawn (" + n + ")";
+
+    if(n === 0){
+      elNum.textContent = "Tap draw for your first number";
+      elNum.className = "big placeholder";
+      elPrev.textContent = "";
+    } else {
+      elNum.textContent = drawn[n-1];
+      elNum.className = "big";
+      var earlier = drawn.slice(0, n-1).slice(-6);
+      elPrev.textContent = earlier.length ? "before: " + earlier.join("  ") : "";
+    }
+
+    elDraw.disabled = n >= MAX;
+    elDraw.textContent = n >= MAX ? "All 75 drawn" : "Draw a number";
+    elUndo.disabled = n === 0;
+
+    // build grid 1..75 in numeric order, mark drawn
+    var latest = drawn[n-1];
+    var html = "";
+    for(var i=1;i<=MAX;i++){
+      var hit = drawn.indexOf(i) !== -1;
+      var cls = "cell" + (hit ? " hit" : "") + (i === latest ? " latest" : "");
+      html += '<div class="'+cls+'">'+i+'</div>';
+    }
+    elGrid.innerHTML = html;
+  }
+
+  elDraw.addEventListener("click", function(){
+    if(drawn.length >= MAX) return;
+    var pool = [];
+    for(var i=1;i<=MAX;i++) if(drawn.indexOf(i) === -1) pool.push(i);
+    var pick = pool[Math.floor(Math.random()*pool.length)];
+    drawn.push(pick);
+    save(); render();
+  });
+
+  elUndo.addEventListener("click", function(){
+    if(!drawn.length) return;
+    drawn.pop(); save(); render();
+  });
+
+  var resetArmed = false, resetTimer = null;
+  elReset.addEventListener("click", function(){
+    if(!drawn.length){ return; }
+    if(!resetArmed){
+      resetArmed = true;
+      elReset.textContent = "Tap again to clear";
+      resetTimer = setTimeout(function(){
+        resetArmed = false; elReset.textContent = "New game";
+      }, 2500);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false;
+    elReset.textContent = "New game";
+    drawn = []; save(); render();
+  });
+
+  render();
+</script>
